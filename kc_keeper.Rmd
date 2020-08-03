@@ -2,7 +2,8 @@
 title: "A New Keeper in KC"
 author: "Ben Foglia"
 date: "8/3/2020"
-output: html_document
+output: html_document:
+keep_md: true
 ---
 
 ```{r setup, include=FALSE}
