@@ -1,0 +1,147 @@
+---
+title: "A New Keeper in KC"
+author: "Ben Foglia"
+date: "8/3/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+  
+## Team Selection Process
+
+  When selecting a team, I focused on the Team xGoals table on American Soccer Analysis (ASA). I wanted to pick a team that performed under expectations and could have possibly been a playoff team had it met those expectations. This led me to Sporting Kansas City. 
+```{r}
+library(readr)
+library(dplyr)
+xgoals_teams <- read_csv("F:/mls/xgoals_teams.csv")
+
+skc2019 <- xgoals_teams %>% 
+  filter(Team == "SKC", Season == 2019)
+print(skc2019, width = Inf)
+```
+
+  In 2019, KC put up a goal differential of -21, but had an expected goal differential of almost +3. This is the largest negative gap since ASA began collecting data in 2013. They also finished with 38 points, 10 below expected. Sure enough, 48 points was enough to secure the final playoff spot in the Western Conference last season.
+  
+## Position Selection Process
+
+  I used ASA's goals added metric to determine Kansas City's worst performers in 2019. Seth Sinovic and Erik Hurtado had the two lowest scores by a fair margin, each putting up a score of -1.42. However, Sinovic was replaced at left back towards the end of the season by Luis Martins, who put up much better scores. Hurtado, a forward, only appeared in 13 games. Kansas City got good production from its other forwards Johnny Russell (9 goals, 9 assists, 3.0 goals added), Gerso Ferndandes (6 assists, 2.0 goals added), and Krisztian Nemeth (8 goals, .6 goals added).
+  I decided to look at goalkeeping.
+```{r}
+xgoals_keepers <- read_csv("F:/mls/xgoals_keepers.csv")
+xgoals_keepers$sv <- xgoals_keepers$Saves/xgoals_keepers$`Shots Faced`
+Melia <- xgoals_keepers %>% filter(Player == "Tim Melia")
+print(Melia, width = Inf)
+```
+
+  Tim Melia put up his worst season in recent years in terms of save percentage and Goals Allowed - Expected Goals Allowed, and we can see that his numbers have continued to regress each of the 2 seasons following his MLS Goalkeeper of the Year winning season in 2017. Melia turned 34 this past season. Perhaps this is the end of the road for him.
+  
+## Is Tim Melia's Time Up?
+
+  In order to see if there's a chance of Melia having a turnaround season, I retrieved the ages of each keeper in ASA's database since 2013 and plotted their age vs. their G/xG stat.
+  
+```{r}
+keeper_ages <- read_csv("F:/mls/keeper_ages.csv")
+library(ggplot2)
+
+ggplot(keeper_ages, aes(x = Age, y=`G/xG`)) +
+  geom_point() +
+  geom_text(aes(label=ifelse(`G/xG`< .9 & Age >= 35,as.character(Player),'')),hjust=0,vjust=0) +
+  xlim(30,42)
+
+```
+
+  We can see that only 4 keepers have ever put up a G/xG of .8 or lower at age 35 or older: Tim Howard, Donovan Ricketts, Matt Reis, and Nick Rimando (twice).
+  Age alone isn't enough to determine a keeper's performance. However, when looking at some of these keepers over multiple seasons, we can see that none of them had been putting up poor numbers prior to those great seasons at 35+ years old.
+```{r}
+over30 <- keeper_ages %>% filter(Age > 30) %>% group_by(Player) %>% filter(n()>1)
+library(plotly)
+
+over30plot <- ggplot(over30, aes(x = Age, y = `G/xG`, color = Player)) +
+  geom_point()
+ggplotly(over30plot)
+
+```
+  
+  When Melia's numbers are plotted against Rimando, Ricketts, Howard, and others, two things become clear. All of these keepers were performing at a higher level at a higher age, and perhaps more importantly, none of them returned to their old selves once their numbers started to climb. It appears that Melia's time as Kansas City's number 1 is over.
+  
+## Potential Replacements
+  
+  A look at the roster shows that Kansas City isn't prepared for this. Eric Dick and Adrian Zendejas were the other two keepers on the 2019 roster. Dick's only appearance was a start on the final game of the season where he gave up 6 goals. Zendejas was traded to Nashville back in November. One keeper is absolutely necessary, but it could be smart getting two and investing in the future. Sticking with the G/xG stat, below are all keepers who put up a G/xG below 1 in 2019, whose guaranteed compensation is below $400,000.
+
+```{r}
+salaries <- read_csv("F:/mls/salaries.csv")
+total_keepers <- salaries %>% right_join(keeper_ages, by = c("Player", "Season", "Team"))
+
+
+library(ggrepel)
+
+## keepers under $400,000 with g/xg of below 1 in 2019
+p <- ggplot(total_keepers, aes(x = `G/xG`, y = `Guaranteed Compensation`, label = Player, color = Age)) +
+  geom_point() +
+  geom_label_repel(size = 4) +
+  ylim(0,400000) +
+  xlim(.5,1) +
+  theme_classic() +
+  scale_color_binned()
+ggplotly(p)
+
+```
+
+  Based on the plot, Andrew Putna seems like the best "bang for your buck" target. He posted two clean sheets in five starts for RSL last season and it seemed like he'd have a shot at the starting spot after Nick Rimando retired, but RSL traded for Zac MacMath in December. Putna should be KC's top target. I believe $100,000 in general allocation money with more potentially added on should Putna become the starter and make more than 10-15 starts.
+  
+  Matt Turner cemented his status as the starter for New England this past year, signing a multi-year extension in August. Tyler Miller is a similar situation, as he was just traded to Minnesota on January 16th. These may not be viable options.
+  
+  Matt Freese is an intriguing piece on this plot. A homegrown player on Philadelphia, Freese made five starts as Andre Blake's backup and put up a 65% save percentage. Freese is only 21 and may not be ready to fill a starting role, but he could learn under Melia (and perhaps Putna) and become a valuable addition for the future. I would offer $50,000 for homegrown rights. 
+  
+## Metadata
+
+G/xG: Goals/goals allowed divided by expected goals/goals allowed (a stat of 1 would mean goals and expected goals are equal.)
+
+Goals Added Explained (From American Soccer Analysis):
+
+image: ![](F:/g+.png)
+
+## Code
+```{r,echo=TRUE, eval=FALSE}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(ggrepel)
+
+xgoals_teams <- read_csv("F:/mls/xgoals_teams.csv")
+xgoals_keepers <- read_csv("F:/mls/xgoals_keepers.csv")
+keeper_ages <- read_csv("F:/mls/keeper_ages.csv")
+salaries <- read_csv("F:/mls/salaries.csv")
+
+skc2019 <- xgoals_teams %>% filter(Team == "SKC", Season == 2019) %>%
+  select(-c("Team", "Season"))
+print(skc2019, width = Inf)
+
+xgoals_keepers$sv <- xgoals_keepers$Saves/xgoals_keepers$`Shots Faced`
+Melia <- xgoals_keepers %>% filter(Player == "Tim Melia")
+print(Melia, width = Inf)
+
+ggplot(keeper_ages, aes(x = Age, y=`G/xG`)) +
+  geom_point() +
+  geom_text(aes(label=ifelse(`G/xG`< .9 & Age >= 35,as.character(Player),'')),hjust=0,vjust=0) +
+  xlim(30,42)
+
+over30plot <- ggplot(over30, aes(x = Age, y = `G/xG`, color = Player)) +
+  geom_point()
+ggplotly(over30plot)
+
+total_keepers <- salaries %>% right_join(keeper_ages, by = c("Player", "Season", "Team"))
+
+p <- ggplot(total_keepers, aes(x = `G/xG`, y = `Guaranteed Compensation`, label = Player, color = Age)) +
+  geom_point() +
+  geom_label_repel(size = 4) +
+  ylim(0,400000) +
+  xlim(.5,1) +
+  theme_classic() +
+  scale_color_binned()
+ggplotly(p)
+```
+
