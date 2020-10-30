@@ -46,10 +46,11 @@ print(Melia, width = Inf)
 keeper_ages <- read_csv("F:/mls/keeper_ages.csv")
 library(ggplot2)
 
-ggplot(keeper_ages, aes(x = Age, y=`G/xG`)) +
+ggplot(keeper_ages, aes(x = Age, y=`G/xG`, label=ifelse(`G/xG`< .9 & Age >= 35,as.character(Player), ""))) +
   geom_point() +
-  geom_text(aes(label=ifelse(`G/xG`< .9 & Age >= 35,as.character(Player),'')),hjust=0,vjust=0) +
-  xlim(30,42)
+  geom_text(size = 3) +
+  xlim(30,42) +
+  geom_text_repel()
 
 ```
 
@@ -60,7 +61,8 @@ over30 <- keeper_ages %>% filter(Age > 30) %>% group_by(Player) %>% filter(n()>1
 library(plotly)
 
 over30plot <- ggplot(over30, aes(x = Age, y = `G/xG`, color = Player)) +
-  geom_point()
+  geom_point() + 
+  theme(legend.position = "none")
 ggplotly(over30plot)
 
 ```
@@ -125,14 +127,17 @@ xgoals_keepers$sv <- xgoals_keepers$Saves/xgoals_keepers$`Shots Faced`
 Melia <- xgoals_keepers %>% filter(Player == "Tim Melia")
 print(Melia, width = Inf)
 
-ggplot(keeper_ages, aes(x = Age, y=`G/xG`)) +
+ggplot(keeper_ages, aes(x = Age, y=`G/xG`, label=ifelse(`G/xG`< .9 & Age >= 35,as.character(Player), ""))) +
   geom_point() +
-  geom_text(aes(label=ifelse(`G/xG`< .9 & Age >= 35,as.character(Player),'')),hjust=0,vjust=0) +
-  xlim(30,42)
+  geom_text(size = 3) +
+  xlim(30,42) +
+  geom_text_repel()
 
 over30plot <- ggplot(over30, aes(x = Age, y = `G/xG`, color = Player)) +
-  geom_point()
+  geom_point() + 
+  theme(legend.position = "none")
 ggplotly(over30plot)
+
 
 total_keepers <- salaries %>% right_join(keeper_ages, by = c("Player", "Season", "Team"))
 
